@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import { IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel } from '@material-ui/core';
 import { ProcessedVideo } from '../common/interfaces';
 import DeleteIcon from "@material-ui/icons/Delete";
 import EditIcon from "@material-ui/icons/Edit";
@@ -7,6 +7,7 @@ import { SearchComponent } from './searchComponent';
 import { filterVideos } from '../common/filter';
 import { DatabaseContext } from './databaseContext';
 import { ConfirmationDialog } from './confirmationDialog';
+import { sortVideos } from '../common/sort';
 
 interface VideosTableProps {
   onEditButtonClicked: (video: ProcessedVideo) => void;
@@ -20,7 +21,9 @@ export const VideosTable: React.FC<VideosTableProps> = ({ onEditButtonClicked, o
   const [selectedVideo, setSelectedVideo] = useState<ProcessedVideo | undefined>();
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string | undefined>();
-  const [filteredVideos, setFilteredVideos] = useState<ProcessedVideo[]>(videos);
+  const [filteredAndSortedVideos, setFilteredAndSortedVideos] = useState<ProcessedVideo[]>(videos);
+  const [sorting, setSorting] = useState<{ order: "asc" | "desc", column: "name" | "author" }>({ order: "asc", column: "name" });
+
 
   const handleClose = (confirmed: boolean) => {
     setShowConfirmation(false);
@@ -29,12 +32,28 @@ export const VideosTable: React.FC<VideosTableProps> = ({ onEditButtonClicked, o
     }
   }
 
+  const onSortingClicked = (column: "name" | "author") => {
+    const nextSorting = column !== sorting.column
+      ? "asc"
+      : sorting.order === "asc" ? "desc" : "asc"
+    setSorting({ column, order: nextSorting });
+  }
+
   useEffect(() => {
     const filteredVideos = filterVideos({ authors, videos, categories, searchValue });
-    setFilteredVideos(filteredVideos)
+    console.log(sorting.order);
+    console.log(videos.map(f => f.name));
+
+    console.log(filteredVideos.map(f => f.name));
+    sortVideos({ authors, videos: filteredVideos, sortingColumn: sorting.column, order: sorting.order });
+    console.log(filteredVideos.map(f => f.name));
+
+    setFilteredAndSortedVideos(filteredVideos)
   },
-    [searchValue, authors, videos, categories]
+    [searchValue, authors, videos, categories, sorting]
   );
+
+  console.log(filteredAndSortedVideos.map(f => f.name));
 
   return (
     <>
@@ -43,8 +62,22 @@ export const VideosTable: React.FC<VideosTableProps> = ({ onEditButtonClicked, o
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Video Name</TableCell>
-              <TableCell>Author</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  direction={sorting.order}
+                  active={sorting.column === "name"}
+                  onClick={() => onSortingClicked("name")}
+                >
+                  Video Name
+                </TableSortLabel>
+              </TableCell>
+              <TableCell><TableSortLabel
+                direction={sorting.order}
+                active={sorting.column === "author"}
+                onClick={() => onSortingClicked("author")}
+              >
+                Author
+                </TableSortLabel></TableCell>
               <TableCell>Categories</TableCell>
               <TableCell>Highest resolution</TableCell>
               <TableCell>Release Date</TableCell>
@@ -52,8 +85,9 @@ export const VideosTable: React.FC<VideosTableProps> = ({ onEditButtonClicked, o
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredVideos.map((video) => (
-              <TableRow key={video.id}>
+            {filteredAndSortedVideos.map((video) => {
+              console.log(video.name, video.id);
+              return <TableRow key={video.name} >
                 <TableCell component="th" scope="row">
                   {video.name}
                 </TableCell>
@@ -74,8 +108,8 @@ export const VideosTable: React.FC<VideosTableProps> = ({ onEditButtonClicked, o
                     <DeleteIcon color="secondary" />
                   </IconButton>
                 </TableCell>
-              </TableRow>
-            ))}
+              </TableRow>;
+            })}
           </TableBody>
         </Table>
       </TableContainer >
