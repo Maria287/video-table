@@ -7,6 +7,13 @@ export interface Video {
   id: number;
   catIds: number[];
   name: string;
+  releaseDate: string;
+  formats: { [key: string]: Format };
+}
+
+export interface Format {
+  res: string;
+  size: number;
 }
 
 export interface Author {
@@ -18,6 +25,8 @@ export interface Author {
 export interface ProcessedVideo {
   id: number;
   name: string;
-  author: string;
-  categories: string[];
+  authorId: number;
+  categoryIds: number[];
+  releaseDate: string;
+  highestQualityFormat: string;
 }
